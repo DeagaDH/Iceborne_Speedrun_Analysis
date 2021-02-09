@@ -1,4 +1,23 @@
 import pandas as pd
+import numpy as np
+
+#Dictionary of weapon types
+weapon_dict = {'Great Sword':'GS',
+                'Long Sword':'LS',
+                'Sword And Shield':'SnS',
+                'Dual Blades':'DB',
+                'Lance':'Lance',
+                'Gunlance':'GL',
+                'Hammer':'Hammer',
+                'Hunting Horn':'HH',
+                'Switch Axe':'SA',
+                'Charge Blade':'CB',
+                'Insect Glaive':'IG',
+                'Heavy Bowgun':'HBG',
+                'Light Bowgun':'LBG',
+                'Bow':'Bow'    
+                }
+
 
 def make_rankings(csv_file):
     """
@@ -7,7 +26,7 @@ def make_rankings(csv_file):
     """
 
     #Import data as a dataframe
-    freestyle = pd.read_csv('speedrun_data.csv')
+    freestyle = pd.read_csv(csv_file)
 
     # Filter out 'repeat runs'
     # 'Repeat run': run on the same monster, same quest, by the same runner with the same weapon, but different times.
@@ -33,26 +52,7 @@ def make_rankings(csv_file):
     #Convert Star Rating to string (discrete values!)
     freestyle['Star Rating']=freestyle['Star Rating'].apply(str)
 
-
-
-    #Abbreviate weapon names
-    weapon_dict = {'Great Sword':'GS',
-                'Long Sword':'LS',
-                'Sword And Shield':'SnS',
-                'Dual Blades':'DB',
-                'Lance':'Lance',
-                'Gunlance':'GL',
-                'Hammer':'Hammer',
-                'Hunting Horn':'HH',
-                'Switch Axe':'SA',
-                'Charge Blade':'CB',
-                'Insect Glaive':'IG',
-                'Heavy Bowgun':'HBG',
-                'Light Bowgun':'LBG',
-                'Bow':'Bow'    
-                }
-
-    #Apply dict to weapons column
+    #Apply dict to weapons column to have short names
     freestyle['Weapon']=freestyle['Weapon'].apply(lambda x: weapon_dict[x])
 
     # Sort dataframe by, in order: Star Rating, Monster Name, Quest, and Time
@@ -182,18 +182,63 @@ def make_rankings(csv_file):
     #Return the freestyle and TA dataframes
     return (freestyle,ta)
 
-
-def pick_top_run(speed_df,rank_by_column='Monster/Weapon',top_pos=1):
+def filter_by_weapon(speed_df,weapon_array=np.array([]),filter_by='Quest',weapon_column='Weapon'):
     """
-    Returns a dataframe with only the 'top_pos' best runs from
-    'speed_df', as ranked by the 'rank_by_column' column.
+    Filters out runs that don't have all the weapon types given by weapon_list.
+    Filtering is done by unique groups in the 'filter_by' column.
+    Defaults:
+        filter_by='Quest'         --> filter speed_df to return only quests with all weapon_types
+        weapon_array=np.array([]) --> if weapon_array is empty, leave only runs with ALL weapons
+        weapon_columns            --> 'Weapon', name of column with weapon types
+    """
+    
+    #Check for empty weapon_array
+    if not weapon_array.size: 
+    #Get array of all weapon types
+        weapon_array = np.sort(np.array(speed_df[weapon_column].unique())) #Sort to compare later
+    
+    #Get the array to filter by
+    filter_array = np.array(speed_df[filter_by].unique())
+
+    #Start with an empty dataframe
+    filter_df = pd.DataFrame() 
+
+    for item in filter_array:
+
+        #Get a slice of speed_df corresponding to the current item
+        slice_df = speed_df[speed_df[filter_by] == item]
+
+        #Check if the slice has all weapon types
+        check = np.array_equal(weapon_array,np.sort(speed_df[speed_df[filter_by]==item][weapon_column].unique()))
+
+        #Concatenate to filter_df, if all weapons are present
+        if check:
+            filter_df = pd.concat([filter_df,slice_df])
+
+    return filter_df.reset_index(drop=True)
+
+def average_top_runs(speed_df,rank_column,weapon_column='Weapon',time_column='Time (s)',top_pos=1):
+    """
+    Returns a DataFrame with the average top speedrun times for each weapon class,
+    as ordered by the 'rank_column' column.
+    This will take the 'top_pos' times into the average. For top_pos=1, that's
+    only the fastest time, top_pos=2 means it's the fastest 2 times, etc.
+    Return value is ordered by time_column, going from fastest to slowest.
     """
 
-    return speed_df[speed_df[rank_by_column]==top_pos]
+    #Pick out the top runs
+    avg = speed_df[speed_df[rank_column]<=top_pos]
 
+    #Group by weapon type and get the mean values
+    avg = avg.groupby(weapon_column).mean().reset_index()
 
+    #Sort weapons
+    avg = avg.sort_values('Time (s)',ascending=True)
 
+    #Update index to correspond to rankings (ie start at 1 rather than 0)
+    avg = avg.reset_index()
+    avg.index += 1
 
-
-
+    #Return
+    return avg
 

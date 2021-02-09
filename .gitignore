@@ -1,3 +1,5 @@
 __pycache__
 .ipynb_checkpoints
+.vscode
 gather_speedrun.ipynb
+speedrun_analysis_test.ipynb
