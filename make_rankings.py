@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from string import ascii_uppercase
 
 #Dictionary of weapon types
 weapon_dict = {'Great Sword':'GS',
@@ -90,7 +91,7 @@ def make_rankings(csv_file):
                 rank += 1
 
             #Reset rank count for next iteration
-            rank=1;
+            rank=1
         
         #Create DataFrame to return
         rank_df = pd.DataFrame(data=ranking,index=speed_df.index)
@@ -138,7 +139,7 @@ def make_rankings(csv_file):
                     rank += 1
 
                 #Reset rank count for next iteration
-                rank=1;
+                rank=1
         
         #Create DataFrame to return
         rank_df = pd.DataFrame(data=ranking,index=speed_df.index)
@@ -242,3 +243,76 @@ def average_top_runs(speed_df,rank_column,weapon_column='Weapon',time_column='Ti
     #Return
     return avg
 
+def make_tiers(rank_df,n_tiers=5,tier_list=[],weapon_column='Weapon (long)',time_column='Time (s)',sort=False):
+    """
+    Separates weapons from a ranking, given by 'rank_df' into tiers, sorted by the 'time_column'.
+    Weapons will be split into 'n_tiers' tiers. Weapon list is obtained from weapon_column.
+    """
+
+    #Sort rank_df by time_column if desired
+    if sort:
+        rank_df = rank_df.sort_values(time_column,ascending=True)
+
+    #If tier list is empty, create it from ascii_uppercase, with S as the first possible rank
+    if not tier_list:
+        tier_list = 'S'+ascii_uppercase
+
+    #Time gap between fastest and slowest time
+    time_gap = rank_df[time_column].max() - rank_df[time_column].min()
+
+    #And the time gap between each individual tier
+    tier_gap = round(time_gap/n_tiers,-1)
+
+    #First tier will be made so the fastest time sits in the middle of it
+    time_list = [round(rank_df[time_column].iloc[0] - tier_gap/2,1)]
+
+    #Empty dictionary to store results
+    tier_dict={}
+
+    #Create rest of time tiers
+    while (time_list[-1] < rank_df[time_column].max()):
+        time_list.append(time_list[-1] + tier_gap)
+
+    #Tiers for the list:
+    tier_names = tier_list[:len(time_list)-1] #Single string
+    tier_names = ' '.join(tier_names) #With spaces
+    tier_names = tier_names.split() #List where each item is a tier name
+
+    #Time intervals corresponding to each tier
+    time_intervals=[]
+    for i in range(0,len(tier_names)):
+        time_intervals.append(str(time_list[i])+' s  -  '+str(time_list[i+1])+' s')
+
+    #Weapons in each rank
+    tier_weapons=[]; #star with empty list
+
+    #Initialize a counter
+    counter=1
+
+    #Iterate through all tiers
+    for time in tier_names:
+
+        tier = tier_names[0]
+            
+        #Get the min and maximum allowed times for this tier
+        min_time = time_list[counter-1]
+        max_time = time_list[counter]
+
+        #Slice the valid portion of rank_df
+        slice_df = rank_df[(rank_df[time_column] >= min_time) & (rank_df[time_column] < max_time)]
+
+        #Append list of weapons to tier_weapons
+        tier_weapons.append(slice_df[weapon_column].tolist())
+        counter += 1
+
+    #Make tier_df to return
+    tier_df = pd.DataFrame({'Tier':tier_names,'Times':time_intervals,'Weapons':tier_weapons})
+
+    #Set tier column as index
+    tier_df = tier_df.set_index('Tier')
+
+    #Convert lists in 'Weapons' column to strings for readability
+    tier_df['Weapons'] = tier_df['Weapons'].apply(lambda x: ', '.join(x))
+
+    #Made 'Weapons' column longer for readability and return
+    return tier_df.style.set_properties(subset=['Weapons'], **{'width': '300px'})
