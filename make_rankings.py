@@ -27,8 +27,11 @@ def make_rankings(csv_file):
     """
 
     #Import data as a dataframe
-    freestyle = pd.read_csv(csv_file)
-
+    try:
+        freestyle = pd.read_csv(csv_file)
+    except:
+        print("Speedrun data not found! Try running gather_speerdrun.py first!")
+        
     # Filter out 'repeat runs'
     # 'Repeat run': run on the same monster, same quest, by the same runner with the same weapon, but different times.
     # Keep only the fastest run
@@ -179,6 +182,10 @@ def make_rankings(csv_file):
                                             rank_by_column='Quest',weapon_column='Weapon')
     ta['Quest/Weapon'] = weapon_rank(ta[['Quest','Weapon','Time (s)']],
                                             rank_by_column='Quest',weapon_column='Weapon')
+
+    #Save formatted dataframes
+    freestyle.to_csv('freestyle.csv')
+    ta.to_csv('ta.csv')
 
     #Return the freestyle and TA dataframes
     return (freestyle,ta)
