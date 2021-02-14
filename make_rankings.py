@@ -240,6 +240,9 @@ def average_top_runs(speed_df,rank_column,weapon_column='Weapon',time_column='Ti
     #Group by weapon type and get the mean values
     avg = avg.groupby(weapon_column).mean().reset_index()
 
+    #Simplify time values
+    avg['Time (s)'] = avg['Time (s)'].apply(lambda x: round(x,2))
+
     #Sort weapons
     avg = avg.sort_values('Time (s)',ascending=True)
 
@@ -265,16 +268,20 @@ def make_tiers(rank_df,n_tiers=5,tier_list=[],weapon_column='Weapon (long)',time
         tier_list = 'S'+ascii_uppercase
 
     #Time gap between fastest and slowest time
-    time_gap = rank_df[time_column].max() - rank_df[time_column].min()
-
-    #And the time gap between each individual tier
-    tier_gap = round(time_gap/(n_tiers-1),-1)
+    t_f = rank_df[time_column].min() #Fastest time
+    t_s = rank_df[time_column].max() #Slowest time
+    time_gap = t_s - t_f
 
     #First tier will be made so the fastest time sits in the middle of it
-    time_list = [round(rank_df[time_column].iloc[0] - tier_gap/2,1)]
+    #and the tier list has exactly 'n_tiers' tiers
+    #This expression can be derived from the following 3 equations:
+    #time_gap = (t_f - t_s)              (t_f -> slowest time, t_s -> fastest time)
+    #tier_gap = time_gap/(n_tiers - 1)   (Gap between tiers is total time gap divided by n_tiers-1)
+    #t_f = (t_0 + t_1) / 2               (Fastest time t_a sits between the first two tier times, t_0 and t_1)
+    time_list = [round(t_f - time_gap/(2*(n_tiers-1)),0)]
 
-    #Empty dictionary to store results
-    tier_dict={}
+    #And the time gap between each individual tier
+    tier_gap = round(2*(t_f-time_list[0]),0)
 
     #Create rest of time tiers
     while (time_list[-1] < rank_df[time_column].max()):
@@ -288,10 +295,18 @@ def make_tiers(rank_df,n_tiers=5,tier_list=[],weapon_column='Weapon (long)',time
     #Time intervals corresponding to each tier
     time_intervals=[]
     for i in range(0,len(tier_names)):
-        time_intervals.append(str(time_list[i])+' s  -  '+str(time_list[i+1])+' s')
+        #Special cases for first and last cases
+        if (i==0):
+            time_intervals.append('Less than '+str(time_list[i+1])+' s')
+        
+        elif (i==len(tier_names)-1):
+            time_intervals.append('More than '+str(time_list[i])+' s')
+        
+        else: #Base case
+            time_intervals.append(str(time_list[i])+' s  -  '+str(time_list[i+1])+' s')
 
     #Weapons in each rank
-    tier_weapons=[]; #star with empty list
+    tier_weapons=[] #star with empty list
 
     #Initialize a counter
     counter=1
@@ -322,4 +337,4 @@ def make_tiers(rank_df,n_tiers=5,tier_list=[],weapon_column='Weapon (long)',time
     tier_df['Weapons'] = tier_df['Weapons'].apply(lambda x: ', '.join(x))
 
     #Made 'Weapons' column longer for readability and return
-    return tier_df.style.set_properties(subset=['Weapons'], **{'width': '300px'})
+    return tier_df.style.set_properties(subset=['Weapons'], **{'width': '400px'})
