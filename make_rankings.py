@@ -35,7 +35,7 @@ def make_rankings(csv_file):
     # Filter out 'repeat runs'
     # 'Repeat run': run on the same monster, same quest, by the same runner with the same weapon, but different times.
     # Keep only the fastest run
-    freestyle = freestyle.drop_duplicates(['Monster Name','Quest','Runner','Weapon'],keep='first') #Already sorted by time,
+    freestyle = freestyle.drop_duplicates(['Monster','Quest','Runner','Weapon'],keep='first') #Already sorted by time,
                                                                                                 #first time = fastest!
 
 
@@ -59,8 +59,8 @@ def make_rankings(csv_file):
     #Apply dict to weapons column to have short names
     freestyle['Weapon']=freestyle['Weapon'].apply(lambda x: weapon_dict[x])
 
-    # Sort dataframe by, in order: Star Rating, Monster Name, Quest, and Time
-    freestyle = freestyle.sort_values(['Star Rating','Monster Name','Time (s)','Quest'],ascending=[False,True,True,True])
+    # Sort dataframe by, in order: Star Rating, Monster, Quest, and Time
+    freestyle = freestyle.sort_values(['Star Rating','Monster','Time (s)','Quest'],ascending=[False,True,True,True])
 
     #Fix indexes
     freestyle = freestyle.reset_index(drop=True)
@@ -162,8 +162,8 @@ def make_rankings(csv_file):
 
 
     #Rank by monster
-    freestyle['Monster/General'] = general_rank(freestyle[['Monster Name','Time (s)']],rank_by_column='Monster Name')
-    ta['Monster/General'] = general_rank(ta[['Monster Name','Time (s)']],rank_by_column='Monster Name')
+    freestyle['Monster/General'] = general_rank(freestyle[['Monster','Time (s)']],rank_by_column='Monster')
+    ta['Monster/General'] = general_rank(ta[['Monster','Time (s)']],rank_by_column='Monster')
 
     #Rank by quest
     freestyle['Quest/General'] = general_rank(freestyle[['Quest','Time (s)']],rank_by_column='Quest')
@@ -172,10 +172,10 @@ def make_rankings(csv_file):
 
 
     #Rank by monster and weapon type
-    freestyle['Monster/Weapon'] = weapon_rank(freestyle[['Monster Name','Weapon','Time (s)']],
-                                            rank_by_column='Monster Name',weapon_column='Weapon')
-    ta['Monster/Weapon'] = weapon_rank(ta[['Monster Name','Weapon','Time (s)']],
-                                            rank_by_column='Monster Name',weapon_column='Weapon')
+    freestyle['Monster/Weapon'] = weapon_rank(freestyle[['Monster','Weapon','Time (s)']],
+                                            rank_by_column='Monster',weapon_column='Weapon')
+    ta['Monster/Weapon'] = weapon_rank(ta[['Monster','Weapon','Time (s)']],
+                                            rank_by_column='Monster',weapon_column='Weapon')
 
     #Rank by quest and weapon type
     freestyle['Quest/Weapon'] = weapon_rank(freestyle[['Quest','Weapon','Time (s)']],

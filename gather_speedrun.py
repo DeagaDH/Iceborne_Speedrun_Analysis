@@ -93,7 +93,7 @@ monster_categories = soup.find_all('div',{'class': lambda L: L and L.endswith('s
 #Get amount of monsters to initialize dataframe
 monster_count = len(soup.find_all('li',{'class':''}))
 
-link_df = pd.DataFrame(columns=['Monster Name','Star Rating','Link'],index=range(0,monster_count))
+link_df = pd.DataFrame(columns=['Monster','Star Rating','Link'],index=range(0,monster_count))
 
 count=0
 for category in monster_categories:
@@ -103,15 +103,15 @@ for category in monster_categories:
     
     #Cycle through all monsters in the category
     for monster in monster_list:
-        #Full monster name
+        #Full Monster
         full_name = monster.get_text()
 
         #Check for Safi'Jiiva (Full Energy)
         if ('Full Energy' in full_name):
-            link_df.at[count,'Monster Name'] = "Safi'jiiva (Full Energy)" #Only exception
-        else: #All other monster names
-            link_df.at[count,'Monster Name'] = monster.get_text().split('(')[0] #Monster name + space before parenthesis
-            link_df.at[count,'Monster Name'] = link_df.at[count,'Monster Name'][:-1] #Remove space
+            link_df.at[count,'Monster'] = "Safi'jiiva (Full Energy)" #Only exception
+        else: #All other Monsters
+            link_df.at[count,'Monster'] = monster.get_text().split('(')[0] #Monster + space before parenthesis
+            link_df.at[count,'Monster'] = link_df.at[count,'Monster'][:-1] #Remove space
         
         #Star Rating
         link_df.at[count,'Star Rating'] = category.find('h5').get_text()[0] #First character is the star rating
@@ -121,7 +121,7 @@ for category in monster_categories:
         count += 1
 
 #Create one Dataframe to store all speedrun data
-speed_df = pd.DataFrame(columns=['Star Rating','Monster Name','Quest','Runner','Time','Weapon','Platform','Ruleset'])
+speed_df = pd.DataFrame(columns=['Star Rating','Monster','Quest','Runner','Time','Weapon','Platform','Ruleset'])
 
 #Instantiate table parser object
 table_parser = IBSpeedrunTableParser()
@@ -130,14 +130,14 @@ table_parser = IBSpeedrunTableParser()
 for index in link_df.index:
 
     #Print statemant for how it's going
-    print(f"Gathering speedrun data for {link_df['Monster Name'][index]}...")
+    print(f"Gathering speedrun data for {link_df['Monster'][index]}...")
     url = link_df['Link'][index]
 
     #Get Dataframe for the monster
     mon_df = table_parser.parse_url(url)
 
-    #Add columns for monster name and star rating
-    mon_df.insert(0, 'Monster Name', link_df['Monster Name'][index])
+    #Add columns for Monster and star rating
+    mon_df.insert(0, 'Monster', link_df['Monster'][index])
     mon_df.insert(0, 'Star Rating', link_df['Star Rating'][index])
 
     #Append to speed_df
