@@ -184,8 +184,8 @@ def make_rankings(csv_file):
                                             rank_by_column='Quest',weapon_column='Weapon')
 
     #Save formatted dataframes
-    freestyle.to_csv('freestyle.csv')
-    ta.to_csv('ta.csv')
+    freestyle.to_csv('freestyle.csv',index=False)
+    ta.to_csv('ta.csv',index=False)
 
     #Return the freestyle and TA dataframes
     return (freestyle,ta)
@@ -338,3 +338,36 @@ def make_tiers(rank_df,n_tiers=5,tier_list=[],weapon_column='Weapon (long)',time
 
     #Made 'Weapons' column longer for readability and return
     return tier_df.style.set_properties(subset=['Weapons'], **{'width': '400px'})
+
+def remove_outliers(speed_df,weapon_column='Weapon',time_column='Time (s)',quant1=0.25,quant3=0.75,mult=1.5):
+    """
+    Removes entries with outlier times (defined by time_column), per weapon type
+    (defined by weapon_column)
+    """
+
+    #First get a list of the different weapons available
+    weapon_list = speed_df[weapon_column].unique()
+
+    #Start with an empty dataframe
+    no_outliers = pd.DataFrame()
+
+    #Iterate through weapon types
+    for weapon in weapon_list:
+        #Get a slice with just the current weapon
+        temp_df = speed_df[speed_df[weapon_column]==weapon]
+
+        #Define quantiles
+        Q1 = temp_df[time_column].quantile(quant1)
+        Q3 = temp_df[time_column].quantile(quant3)
+        IQR = Q3 - Q1
+
+        #The temp_df with no outliers
+        filter_mask = ((temp_df[time_column] >= Q1 - mult * IQR) & (temp_df[time_column] <= Q3 + mult *IQR))
+        temp_df = temp_df[filter_mask]
+
+        #Concatenate to output df
+        no_outliers=pd.concat([no_outliers,temp_df])
+
+    
+    #Return df with no outliers
+    return no_outliers
