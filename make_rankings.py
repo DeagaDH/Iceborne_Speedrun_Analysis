@@ -313,7 +313,7 @@ def make_tiers(rank_df,n_tiers=5,tier_list=[],weapon_column='Weapon (long)',time
         counter += 1
 
     #Make tier_df to return
-    tier_df = pd.DataFrame({'Tier':tier_names,'Times':time_intervals,'Weapons':tier_weapons})
+    tier_df = pd.DataFrame({'Tier':tier_names,'Average Times':time_intervals,'Weapons':tier_weapons})
 
     #Set tier column as index
     tier_df = tier_df.set_index('Tier')
