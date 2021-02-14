@@ -268,7 +268,7 @@ def make_tiers(rank_df,n_tiers=5,tier_list=[],weapon_column='Weapon (long)',time
     time_gap = rank_df[time_column].max() - rank_df[time_column].min()
 
     #And the time gap between each individual tier
-    tier_gap = round(time_gap/n_tiers,-1)
+    tier_gap = round(time_gap/(n_tiers-1),-1)
 
     #First tier will be made so the fastest time sits in the middle of it
     time_list = [round(rank_df[time_column].iloc[0] - tier_gap/2,1)]
