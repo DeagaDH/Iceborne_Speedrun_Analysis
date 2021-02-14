@@ -1,6 +1,8 @@
 import pandas as pd
 import numpy as np
 from string import ascii_uppercase
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 #Dictionary of weapon types
 weapon_dict = {'Great Sword':'GS',
@@ -19,6 +21,15 @@ weapon_dict = {'Great Sword':'GS',
                 'Bow':'Bow'    
                 }
 
+inv_weapon_dict = {value: key for key, value in weapon_dict.items()}
+
+#Prepare figure properties for later graphs
+figure_size = (16,7)
+font_size = 20
+
+#Set style and context
+sns.set_context('notebook')
+sns.set_style('dark')
 
 def make_rankings(csv_file):
     """
@@ -371,3 +382,30 @@ def remove_outliers(speed_df,weapon_column='Weapon',time_column='Time (s)',quant
     
     #Return df with no outliers
     return no_outliers
+
+def show_top_runs(speed_df,filter_by='Quest',rank_type='Weapon',ruleset='TA'):
+    """
+    Creates a bar plot of the average clear times in speed_df. Times can be filtered by 'Quest' or 'Monster'.
+    Rank_type can be either by 'Weapon' (ie rank each weapon individually) or 'General' (group all weapons together)
+    """
+
+    #Change rank_type string so it coincides with column names on speed_df:
+    rank_type=filter_by+'/'+rank_type
+
+    #Filter out so we have only Quests or Monsters with at least one entry per weapon
+    output_df = filter_by_weapon(speed_df,filter_by=filter_by)
+
+    #Get average times
+    output_df = average_top_runs(output_df,rank_type)
+
+    plt.figure(figsize=figure_size)
+    sns.barplot(x='Weapon',y='Time (s)',data=output_df).set_title(f'Average TOP clear times - {filter_by} - {ruleset}', fontsize =font_size)
+
+    #Apply mapping from inv_weapon-dict
+    output_df['Weapon (long)']=output_df['Weapon'].apply(lambda x: inv_weapon_dict[x])
+    #Numerical values
+    print(f'\nAverage Top clear times - {rank_type} - {ruleset} ')
+    print(output_df[['Weapon (long)','Time (s)']])
+
+    #Return output_df for use later
+    return output_df
